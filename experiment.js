@@ -2,7 +2,7 @@ const startButton = document.getElementById("start-button");
 const startScreen = document.getElementById("start-screen");
 const studyTarget = document.getElementById("study-target");
 
-const VIDEO_FOLDER = "../Tablet_Study1_Videos/";
+const VIDEO_FOLDER = "./Tablet_Study1_Videos/";
 
 const WARMUP_HOTSPOTS = {
   1: [
