@@ -5,6 +5,8 @@ const soundCheckButton = document.getElementById("sound-check-button");
 const startButton = document.getElementById("start-button");
 const startScreen = document.getElementById("start-screen");
 const studyTarget = document.getElementById("study-target");
+const childStartScreen = document.getElementById("child-start-screen");
+const childStartButton = document.getElementById("child-start-button");
 
 const VIDEO_FOLDER = "./Tablet_Study1_Videos/";
 
@@ -123,6 +125,12 @@ function yesNoQuestion(filename, trialId, version) {
 startButton.addEventListener("click", () => {
   startButton.disabled = true;
   startScreen.hidden = true;
+  childStartScreen.hidden = false;
+});
+
+childStartButton.addEventListener("click", () => {
+  childStartButton.disabled = true;
+  childStartScreen.hidden = true;
   studyTarget.hidden = false;
 
   const jsPsych = initJsPsych({
@@ -136,6 +144,10 @@ startButton.addEventListener("click", () => {
         </div>`;
     },
   });
+  jsPsych.data.addProperties({
+  subject_id: subjectIdInput.value.trim(),
+  researcher_id: researcherIdInput.value.trim(),
+});
 
   const warmupVersion = Math.random() < 0.5 ? 1 : 2;
 
