@@ -91,6 +91,44 @@
       #study-target #jspsych-video-hotspots-container { margin: auto; }
       .jspsych-video-hotspots-hotspot { touch-action: manipulation; }
       .jspsych-video-hotspots-hotspot[data-hotspot-id="other"] { cursor: default !important; }
+      #child-start-screen {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #eef4ec;
+}
+
+.child-start-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+#chameleon-mascot {
+  max-width: 80vw;
+  max-height: 50vh;
+  object-fit: contain;
+}
+
+#child-start-screen h2 {
+  font-size: clamp(2rem, 6vw, 4rem);
+  margin: 0;
+}
+
+#child-start-button {
+  background: green;
+  font-size: 2rem;
+  min-width: 220px;
+  min-height: 90px;
+}
       .complete { padding: 32px; color: white; text-align: center; }
       .complete h2 { margin-top: 0; }
     </style>
@@ -114,7 +152,19 @@
     <button id="start-button" type="button" disabled>Start study</button>
   </div>
 </main>
+<div id="child-start-screen" hidden>
+  <div class="child-start-content">
+    <img
+      id="chameleon-mascot"
+      src="./Tablet_Study1_Videos/chameleon.png"
+      alt="Kid Lab chameleon mascot"
+    />
 
+    <h2>Ready? Let’s play</h2>
+
+    <button id="child-start-button" type="button">START</button>
+  </div>
+</div>
     <div id="study-target" hidden></div>
 
     <script src="experiment.js"></script>
