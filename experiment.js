@@ -18,6 +18,11 @@ function updateStartButton() {
 subjectIdInput.addEventListener("input", updateStartButton);
 researcherIdInput.addEventListener("input", updateStartButton);
 
+soundCheckButton.addEventListener("click", () => {
+  const audio = new Audio(`${VIDEO_FOLDER}GreatJob.mp3`);
+  audio.play();
+});
+
 const WARMUP_HOTSPOTS = {
   1: [
     { id: "other", x: 0, y: 0, width: 1280, height: 720 },
