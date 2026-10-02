@@ -97,13 +97,24 @@
   </head>
 
   <body>
-    <main id="start-screen">
-      <div>
-        <h1>Project Sprouts</h1>
-        <p>This build plays through the closing message. Turn on the sound, then start when ready.</p>
-        <button id="start-button" type="button">Start study</button>
-      </div>
-    </main>
+<main id="start-screen">
+  <div>
+    <h1>Project Sprouts</h1>
+
+    <label for="subject-id">Subject ID:</label>
+    <input id="subject-id" type="text" />
+
+    <label for="researcher-id">Researcher ID:</label>
+    <input id="researcher-id" type="text" />
+
+    <div>
+      <button id="sound-check-button" type="button">Sound check</button>
+      <button id="researcher-tools-button" type="button">Researcher tools</button>
+    </div>
+
+    <button id="start-button" type="button" disabled>Start study</button>
+  </div>
+</main>
 
     <div id="study-target" hidden></div>
 

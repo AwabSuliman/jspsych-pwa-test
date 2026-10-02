@@ -1,3 +1,7 @@
+const subjectIdInput = document.getElementById("subject-id");
+const researcherIdInput = document.getElementById("researcher-id");
+const soundCheckButton = document.getElementById("sound-check-button");
+const researcherToolsButton = document.getElementById("researcher-tools-button");
 const startButton = document.getElementById("start-button");
 const startScreen = document.getElementById("start-screen");
 const studyTarget = document.getElementById("study-target");
