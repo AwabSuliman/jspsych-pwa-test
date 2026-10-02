@@ -1,12 +1,22 @@
 const subjectIdInput = document.getElementById("subject-id");
 const researcherIdInput = document.getElementById("researcher-id");
 const soundCheckButton = document.getElementById("sound-check-button");
-const researcherToolsButton = document.getElementById("researcher-tools-button");
+
 const startButton = document.getElementById("start-button");
 const startScreen = document.getElementById("start-screen");
 const studyTarget = document.getElementById("study-target");
 
 const VIDEO_FOLDER = "./Tablet_Study1_Videos/";
+
+function updateStartButton() {
+  const subjectFilled = subjectIdInput.value.trim() !== "";
+  const researcherFilled = researcherIdInput.value.trim() !== "";
+
+  startButton.disabled = !(subjectFilled && researcherFilled);
+}
+
+subjectIdInput.addEventListener("input", updateStartButton);
+researcherIdInput.addEventListener("input", updateStartButton);
 
 const WARMUP_HOTSPOTS = {
   1: [
