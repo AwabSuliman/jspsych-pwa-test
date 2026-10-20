@@ -1,29 +1,82 @@
+const startButton = document.getElementById("start-button");
+const startScreen = document.getElementById("start-screen");
+const childStartScreen = document.getElementById("child-start-screen");
+const childStartButton = document.getElementById("child-start-button");
+const studyTarget = document.getElementById("study-target");
 const subjectIdInput = document.getElementById("subject-id");
 const researcherIdInput = document.getElementById("researcher-id");
 const soundCheckButton = document.getElementById("sound-check-button");
+const soundCheckAudio = document.getElementById("sound-check-audio");
+const soundCheckStatus = document.getElementById("sound-check-status");
 
-const startButton = document.getElementById("start-button");
-const startScreen = document.getElementById("start-screen");
-const studyTarget = document.getElementById("study-target");
-const childStartScreen = document.getElementById("child-start-screen");
-const childStartButton = document.getElementById("child-start-button");
-
-const VIDEO_FOLDER = "./Tablet_Study1_Videos/";
+soundCheckButton.addEventListener("click", async () => {
+  soundCheckAudio.pause();
+  soundCheckAudio.currentTime = 0;
+  soundCheckStatus.textContent = "";
+  try {
+    await soundCheckAudio.play();
+    soundCheckStatus.textContent = "Adjust the headphone volume. Click Sound check to play again.";
+  } catch (error) {
+    soundCheckStatus.textContent = "Sound check could not play. Please try again.";
+  }
+});
 
 function updateStartButton() {
-  const subjectFilled = subjectIdInput.value.trim() !== "";
-  const researcherFilled = researcherIdInput.value.trim() !== "";
-
-  startButton.disabled = !(subjectFilled && researcherFilled);
+  startButton.disabled = !subjectIdInput.value.trim() || !researcherIdInput.value.trim();
 }
 
 subjectIdInput.addEventListener("input", updateStartButton);
 researcherIdInput.addEventListener("input", updateStartButton);
+window.addEventListener("pageshow", updateStartButton);
+updateStartButton();
 
-soundCheckButton.addEventListener("click", () => {
-  const audio = new Audio(`${VIDEO_FOLDER}GreatJob.mp3`);
-  audio.play();
-});
+const VIDEO_FOLDER = "https://raw.githubusercontent.com/efosterhanson/CHS_stims/main/Tablet_Study1_Videos/";
+const HOTSPOT_FEEDBACK_CSS = "background-color: rgba(255, 215, 0, 0.35); border: 4px solid #ffd700; border-radius: 12px;";
+
+class ResearcherReview {
+  static info = { name: "researcher-review", version: "1.0.0", parameters: {}, data: {} };
+
+  constructor(jsPsych) { this.jsPsych = jsPsych; }
+
+  trial(displayElement) {
+    studyTarget.classList.add("researcher-review");
+    displayElement.innerHTML = `
+      <div class="complete">
+        <h2>Study complete</h2>
+        <p>Please let a researcher know that you are done.</p>
+        <button id="researcher-continue" type="button">Researcher: continue</button>
+      </div>`;
+    displayElement.querySelector("#researcher-continue").addEventListener("click", () => {
+      displayElement.innerHTML = `
+        <form id="researcher-review-form" class="researcher-review-form">
+          <h2>FOR RESEARCHERS ONLY:</h2>
+          <fieldset>
+            <legend>Keep data?</legend>
+            <label><input type="radio" name="keep_data" value="yes" required /> YES</label>
+            <label><input type="radio" name="keep_data" value="no" required /> NO</label>
+          </fieldset>
+          <label for="researcher-comments">Comments:</label>
+          <textarea id="researcher-comments" name="comments" rows="4"></textarea>
+          <div class="start-actions">
+            <button type="submit">Submit</button>
+          </div>
+          <p role="status" id="review-save-status"></p>
+        </form>`;
+      displayElement.querySelector("input").focus();
+      const form = displayElement.querySelector("form");
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const answers = new FormData(form);
+        form.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+        displayElement.querySelector("#review-save-status").textContent = "Saving…";
+        this.jsPsych.finishTrial({
+          keep_data: answers.get("keep_data") === "yes",
+          comments: answers.get("comments"),
+        });
+      });
+    });
+  }
+}
 
 const WARMUP_HOTSPOTS = {
   1: [
@@ -53,10 +106,15 @@ const THREE_CHOICE_AREAS = [
   { x: 895, y: 250, width: 380, height: 215 },
 ];
 
+const TWO_CHOICE_AREAS = [
+  { x: 100, y: 320, width: 460, height: 370 },
+  { x: 720, y: 320, width: 460, height: 370 },
+];
+
 function twoChoiceHotspots(leftChoice, rightChoice) {
   return [
-    { id: leftChoice, x: 100, y: 170, width: 430, height: 450 },
-    { id: rightChoice, x: 750, y: 170, width: 430, height: 450 },
+    { id: leftChoice, ...TWO_CHOICE_AREAS[0] },
+    { id: rightChoice, ...TWO_CHOICE_AREAS[1] },
   ];
 }
 
@@ -90,7 +148,7 @@ function twoChoiceQuestion(filename, trialId, leftChoice, rightChoice) {
     type: jsPsychVideoHotspots,
     stimulus: `${VIDEO_FOLDER}${filename}`,
     hotspots: twoChoiceHotspots(leftChoice, rightChoice),
-    hotspot_highlight_css: "background-color: transparent; border: 0;",
+    hotspot_highlight_css: HOTSPOT_FEEDBACK_CSS,
     video_preload: false,
     data: { trial_id: trialId, left_choice: leftChoice, right_choice: rightChoice },
     on_load: sizeHotspotVideo,
@@ -98,7 +156,6 @@ function twoChoiceQuestion(filename, trialId, leftChoice, rightChoice) {
 }
 
 function yesNoQuestion(filename, trialId, version) {
-  // Temporary visible answers: the videos do not show Yes/No tap targets.
   const choices = version === 1 ? ["Yes", "No"] : ["No", "Yes"];
   return {
     type: jsPsychVideoButtonResponse,
@@ -106,12 +163,19 @@ function yesNoQuestion(filename, trialId, version) {
     width: 1280,
     height: 720,
     choices,
+    button_html: (choice) => `<button class="jspsych-btn yes-no-image-button" type="button" aria-label="${choice}"><img src="${VIDEO_FOLDER}${choice.toUpperCase()}.png" alt="${choice}" draggable="false" /></button>`,
+    button_layout: "flex",
     response_allowed_while_playing: false,
     trial_ends_after_video: false,
-    data: { trial_id: trialId },
+    data: { trial_id: trialId, left_choice: choices[0].toLowerCase(), right_choice: choices[1].toLowerCase() },
     on_load: () => {
       studyTarget.classList.add("yes-no-trial");
       const video = document.getElementById("jspsych-video-button-response-stimulus");
+      const buttonGroup = document.getElementById("jspsych-video-button-response-btngroup");
+      // Keep the video attached to its original wrapper so playback is not interrupted.
+      const stage = video.parentElement;
+      stage.classList.add("yes-no-video-stage");
+      stage.append(buttonGroup);
       video.setAttribute("playsinline", "");
       video.setAttribute("webkit-playsinline", "");
     },
@@ -123,31 +187,60 @@ function yesNoQuestion(filename, trialId, version) {
 }
 
 startButton.addEventListener("click", () => {
-  startButton.disabled = true;
+  updateStartButton();
+  if (startButton.disabled) return;
+  soundCheckAudio.pause();
+  soundCheckAudio.currentTime = 0;
   startScreen.hidden = true;
   childStartScreen.hidden = false;
+  childStartButton.focus();
 });
 
-childStartButton.addEventListener("click", () => {
+childStartButton.addEventListener("click", async () => {
+  const subjectId = subjectIdInput.value.trim();
+  const researcherId = researcherIdInput.value.trim();
+  if (!subjectId || !researcherId) {
+    updateStartButton();
+    return;
+  }
   childStartButton.disabled = true;
+  soundCheckAudio.pause();
+  soundCheckAudio.currentTime = 0;
+
+  let jsPsych;
+  let resolveReviewSaved;
+  const reviewSaved = new Promise((resolve) => { resolveReviewSaved = resolve; });
+  try {
+    jsPsych = await jsPsychOfflineStorage.initJsPsychOffline({
+      display_element: "study-target",
+      offline: {
+        dbName: "project-sprouts-tablet-study-1",
+        autoShowCompletionScreen: false,
+        typicalSessionSize: 100 * 1024,
+      },
+      on_data_update: (data) => {
+        // The offline wrapper calls this after committing the trial to IndexedDB.
+        if (data.trial_id === "researcher_review") resolveReviewSaved();
+      },
+      on_finish: async () => {
+        await reviewSaved;
+        location.reload();
+      },
+    });
+  } catch (error) {
+    window.alert(`The study could not start because local data storage is unavailable: ${error.message}`);
+    updateStartButton();
+    childStartButton.disabled = false;
+    return;
+  }
+
   childStartScreen.hidden = true;
   studyTarget.hidden = false;
-
-  const jsPsych = initJsPsych({
-    display_element: "study-target",
-    on_finish: () => {
-      studyTarget.innerHTML = `
-        <div class="complete">
-          <h2>Study complete</h2>
-          <p>Please let a researcher know that you are done.</p>
-          <button type="button" onclick="location.reload()">Start again</button>
-        </div>`;
-    },
-  });
   jsPsych.data.addProperties({
-  subject_id: subjectIdInput.value.trim(),
-  researcher_id: researcherIdInput.value.trim(),
-});
+    session_id: jsPsych.offline.sessionId,
+    subject_id: subjectId,
+    researcher_id: researcherId,
+  });
 
   const warmupVersion = Math.random() < 0.5 ? 1 : 2;
 
@@ -156,7 +249,7 @@ childStartButton.addEventListener("click", () => {
       type: jsPsychVideoHotspots,
       stimulus: `${VIDEO_FOLDER}${filename}`,
       hotspots: WARMUP_HOTSPOTS[warmupVersion],
-      hotspot_highlight_css: "background-color: transparent; border: 0;",
+      hotspot_highlight_css: HOTSPOT_FEEDBACK_CSS,
       video_preload: false,
       data: { trial_id: trialId, warmup_version: warmupVersion },
       on_load: sizeHotspotVideo,
@@ -181,7 +274,7 @@ childStartButton.addEventListener("click", () => {
     type: jsPsychVideoHotspots,
     stimulus: `${VIDEO_FOLDER}age.m4v`,
     hotspots: AGE_HOTSPOTS,
-    hotspot_highlight_css: "background-color: transparent; border: 0;",
+    hotspot_highlight_css: HOTSPOT_FEEDBACK_CSS,
     video_preload: false,
     data: { trial_id: "age" },
     on_load: sizeHotspotVideo,
@@ -195,20 +288,14 @@ childStartButton.addEventListener("click", () => {
   const glorpVersion = Math.random() < 0.5 ? 1 : 2;
   const closenessVersion = Math.random() < 0.5 ? 1 : 2;
   const trial3Version = Math.random() < 0.5 ? 1 : 2;
-  const ecoSarcaVersion = Math.random() < 0.5 ? 1 : 2;
-  const ecoGlorpVersion = Math.random() < 0.5 ? 1 : 2;
-  const kindSarcaVersion = Math.random() < 0.5 ? 1 : 2;
-  const kindGlorpVersion = Math.random() < 0.5 ? 1 : 2;
+  const trial4Version = Math.random() < 0.5 ? 1 : 2;
   jsPsych.data.addProperties({
     sarca_condition: sarcaCondition,
     sarca_video_version: sarcaVersion,
     glorp_video_version: glorpVersion,
     closeness_video_version: closenessVersion,
     trial3_video_version: trial3Version,
-    eco_sarca_video_version: ecoSarcaVersion,
-    eco_glorp_video_version: ecoGlorpVersion,
-    kind_sarca_video_version: kindSarcaVersion,
-    kind_glorp_video_version: kindGlorpVersion,
+    trial4_video_version: trial4Version,
   });
 
   const sarcaChoices = sarcaCondition === "A" ? ["ant", "grass"] : ["bee", "grass"];
@@ -223,7 +310,7 @@ childStartButton.addEventListener("click", () => {
     type: jsPsychVideoHotspots,
     stimulus: `${VIDEO_FOLDER}closenesstonature_affect_v${closenessVersion}.m4v`,
     hotspots: THREE_CHOICE_AREAS.map((area, index) => ({ id: closenessChoices[index], ...area })),
-    hotspot_highlight_css: "background-color: transparent; border: 0;",
+    hotspot_highlight_css: HOTSPOT_FEEDBACK_CSS,
     video_preload: false,
     data: { trial_id: "closeness_to_nature" },
     on_load: sizeHotspotVideo,
@@ -236,7 +323,7 @@ childStartButton.addEventListener("click", () => {
       type: jsPsychVideoHotspots,
       stimulus: `${VIDEO_FOLDER}${filename}`,
       hotspots: THREE_CHOICE_AREAS.map((area, index) => ({ id: scaleChoices[index], ...area })),
-      hotspot_highlight_css: "background-color: transparent; border: 0;",
+      hotspot_highlight_css: HOTSPOT_FEEDBACK_CSS,
       video_preload: false,
       data: { trial_id: trialId },
       on_load: sizeHotspotVideo,
@@ -248,7 +335,7 @@ childStartButton.addEventListener("click", () => {
     videoTrial("hello2.mp4", "hello_intro"),
     firstWarmup,
     retryIfNeeded,
-    videoTrial("warmup_end.mp4", "warmup_end"),
+    //videoTrial("warmup_end.mp4", "warmup_end")
     videoTrial("play_for_real.mp4", "play_for_real"),
     ageQuestion,
     twoChoiceQuestion(`ind_sarca_${sarcaCondition}_v${sarcaVersion}.m4v`, "sarca", sarcaLeft, sarcaRight),
@@ -272,11 +359,12 @@ childStartButton.addEventListener("click", () => {
     scaleQuestion(`exp_books_shows_v${trial3Version}.m4v`, "books"),
     // Trial 4
     videoTrial("mem_intro.mp4", "mem_intro"),
-    yesNoQuestion(`eco_sarca_${sarcaCondition}_v${ecoSarcaVersion}.mp4`, "eco_sarca", ecoSarcaVersion),
-    yesNoQuestion(`eco_glorp_v${ecoGlorpVersion}.mp4`, "eco_glorp", ecoGlorpVersion),
-    yesNoQuestion(`kind_sarca_v${kindSarcaVersion}.mp4`, "kind_sarca", kindSarcaVersion),
-    yesNoQuestion(`kind_glorp_v${kindGlorpVersion}.mp4`, "kind_glorp", kindGlorpVersion),
+    yesNoQuestion(`eco_sarca_${sarcaCondition}_v${trial4Version}.mp4`, "eco_sarca", trial4Version),
+    yesNoQuestion(`eco_glorp_v${trial4Version}.mp4`, "eco_glorp", trial4Version),
+    yesNoQuestion(`kind_sarca_v${trial4Version}.mp4`, "kind_sarca", trial4Version),
+    yesNoQuestion(`kind_glorp_v${trial4Version}.mp4`, "kind_glorp", trial4Version),
     // Ending
     videoTrial("thanksforplaying_audio.mp4", "study_end"),
+    { type: ResearcherReview, data: { trial_id: "researcher_review" } },
   ]);
 });
