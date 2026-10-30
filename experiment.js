@@ -289,6 +289,7 @@ childStartButton.addEventListener("click", async () => {
   const closenessVersion = Math.random() < 0.5 ? 1 : 2;
   const trial3Version = Math.random() < 0.5 ? 1 : 2;
   const trial4Version = Math.random() < 0.5 ? 1 : 2;
+  const areaVersion = Math.random() < 0.5 ? 1 : 2;
   jsPsych.data.addProperties({
     sarca_condition: sarcaCondition,
     sarca_video_version: sarcaVersion,
@@ -296,6 +297,7 @@ childStartButton.addEventListener("click", async () => {
     closeness_video_version: closenessVersion,
     trial3_video_version: trial3Version,
     trial4_video_version: trial4Version,
+    area_video_version: areaVersion,
   });
 
   const sarcaChoices = sarcaCondition === "A" ? ["ant", "grass"] : ["bee", "grass"];
@@ -330,6 +332,39 @@ childStartButton.addEventListener("click", async () => {
     };
   }
 
+  // Residential area question
+
+  const AREA_CHOICE_AREAS = [
+    { x: 45, y: 260, width: 300, height: 200 },
+    { x: 480, y: 260, width: 315, height: 200 },
+    { x: 920, y: 260, width: 315, height: 200 },
+  ];
+
+
+  const areaChoices = areaVersion === 1
+    ? ["rural", "suburb", "city"]
+    : ["city", "suburb", "rural"];
+
+  const areaQuestion = {
+    type: jsPsychVideoHotspots,
+    stimulus: `${VIDEO_FOLDER}area_v${areaVersion}.mp4`,
+    hotspots: AREA_CHOICE_AREAS.map((area, index) => ({
+      id: areaChoices[index],
+      ...area
+    })),
+    hotspot_highlight_css: HOTSPOT_FEEDBACK_CSS,
+    video_preload: false,
+    data: {
+      trial_id: "residential_area",
+      area_video_version: areaVersion,
+    },
+    on_load: sizeHotspotVideo,
+    on_finish: (data) => {
+      data.residential_area = data.hotspot_clicked;
+    },
+  };
+
+
   jsPsych.run([
     // Trial 1
     videoTrial("hello2.mp4", "hello_intro"),
@@ -359,12 +394,13 @@ childStartButton.addEventListener("click", async () => {
     scaleQuestion(`trees_talk_v${trial3Version}.mp4`, "trees_talk"),
     scaleQuestion(`trees_move_v${trial3Version}.mp4`, "trees_move"),
     scaleQuestion(`trees_friends_v${trial3Version}.mp4`, "trees_friends"),
-    scaleQuestion(`mor_tree_important_v${trial3Version}.m4v`, "tree_important"),
-    scaleQuestion(`mor_bug_important_v${trial3Version}.m4v`, "bug_important"),
     scaleQuestion(`mor_tree_protect_v${trial3Version}.m4v`, "tree_protect"),
+    scaleQuestion(`mor_tree_important_v${trial3Version}.m4v`, "tree_important"),
     scaleQuestion(`mor_bug_protect_v${trial3Version}.m4v`, "bug_protect"),
+    scaleQuestion(`mor_bug_important_v${trial3Version}.m4v`, "bug_important"),
     scaleQuestion(`exp_time_v${trial3Version}.m4v`, "time"),
     scaleQuestion(`exp_books_shows_v${trial3Version}.m4v`, "books"),
+    areaQuestion,
     // Trial 4
     videoTrial("mem_intro.mp4", "mem_intro"),
     yesNoQuestion(`eco_sarca_${sarcaCondition}_v${trial4Version}.mp4`, "eco_sarca", trial4Version),
